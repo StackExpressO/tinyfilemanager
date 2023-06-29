@@ -1,0 +1,13 @@
+# docker-compose.dev.yaml
+version: '3.4'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "82:80"
+    # command: bash -c "rails s -b 0.0.0.0"
+    stdin_open: true
+    tty: true

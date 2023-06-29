@@ -1,6 +1,7 @@
 <?php
 //Default Configuration
 $CONFIG = '{"lang":"en","error_reporting":false,"show_hidden":false,"hide_Cols":false,"theme":"light"}';
+require __DIR__ . '/vendor/autoload.php';
 
 /**
  * H3K | Tiny File Manager V2.5.3
@@ -9,6 +10,14 @@ $CONFIG = '{"lang":"en","error_reporting":false,"show_hidden":false,"hide_Cols":
  * @github https://github.com/prasathmani/tinyfilemanager
  * @link https://tinyfilemanager.github.io
  */
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+
+$debug = new \bdk\Debug(array(
+	'collect' => true,
+	'output' => true,
+));
+
 
 //TFM version
 define('VERSION', '2.5.3');
@@ -319,8 +328,28 @@ if ($ip_ruleset != 'OFF') {
 
 // Checking if the user is logged in or not. If not, it will show the login form.
 if ($use_auth) {
-    if (isset($_SESSION[FM_SESSION_ID]['logged'], $auth_users[$_SESSION[FM_SESSION_ID]['logged']])) {
-        // Logged
+    if (isset($_SESSION[FM_SESSION_ID]['logged'])){
+        // Logged , $auth_users[$_SESSION[FM_SESSION_ID]['logged']]
+    } elseif (isset($_GET['jwttoken'])) {
+        // Logging In
+        try {
+            // If the JWT is valid, the user is logged in
+            $decoded = JWT::decode($_GET['jwttoken'], 'secret-key', array('HS256'));
+            $_SESSION[FM_SESSION_ID]['logged'] = $decoded->username;
+            $_SESSION[FM_SESSION_ID]['logged_dir'] = $decoded->directory;
+            $directories_users = array($decoded->username => $decoded->directory);
+
+            fm_set_msg(lng('You are logged in'));
+            fm_redirect(FM_SELF_URL);
+        } catch (Exception $e) {
+            // The JWT was invalid or expired, remove it and show the login form
+            unset($_SESSION[FM_SESSION_ID]['logged']);
+            setcookie('jwt', '', time() - 3600);
+            fm_set_msg(lng('Invalid Token'));
+            fm_redirect(FM_SELF_URL);
+            // fm_show_header_login();
+            exit;
+        }
     } elseif (isset($_POST['fm_usr'], $_POST['fm_pwd'], $_POST['token'])) {
         // Logging In
         sleep(1);

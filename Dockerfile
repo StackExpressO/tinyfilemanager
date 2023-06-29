@@ -21,6 +21,17 @@ RUN docker-php-ext-install \
 
 WORKDIR /var/www/html
 
+# Install Composer
+
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# Copy composer.json and composer.lock 
+
+COPY composer.json ./ 
+
+# Install dependencies 
+RUN composer install --no-dev
+RUN composer require bdk/debug --update-no-dev
+
 COPY tinyfilemanager.php index.php
 
 CMD ["sh", "-c", "php -S 0.0.0.0:80"]
